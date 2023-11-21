@@ -32,6 +32,7 @@ router.get("/token", async (req, res) => {
         const userToken = req.headers.authorization.split(' ')[1];
         if(!userToken) {
             res.status(401).send();
+            return;
         }
         // Verify the token with Firebase
         const decodedToken = await appAuth.verifyIdToken(userToken);
