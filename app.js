@@ -28,15 +28,13 @@ app.use((req, res, next) => {
     // Pass to next layer of middleware
     next();
 });
-try {
-    app.get('/', (req, res) => {
-        res.status(200).send({
-            message: "powersync-nodejs-backend-todolist-demo"
-        });
+
+app.use('/api', apiRouter);
+
+app.get('/', (req, res) => {
+    res.status(200).send({
+        message: "powersync-nodejs-backend-todolist-demo"
     });
-    app.use('/api', apiRouter);
-} catch (err) {
-    console.log("Unexpected error", err);
-}
+});
 
 export default app;

@@ -14,6 +14,9 @@ const pool = new Pool({
     port: config.database.port,
 });
 
+/**
+ * Handle error events for PostgresSQL
+ */
 pool.on('error', (err, client) => {
     console.error("Pool connection failure to postgres:", err, client);
 })

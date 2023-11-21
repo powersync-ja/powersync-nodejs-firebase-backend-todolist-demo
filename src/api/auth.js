@@ -1,45 +1,90 @@
 import express from "express";
 import {SignJWT, importJWK} from "jose";
+import {initializeApp, applicationDefault} from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import config from "../../config.js";
 
+/**
+ * Set the Router for all /auth endpoints
+ * @type {Router}
+ */
 const router = express.Router();
+
+/**
+ * Initialize the Firebase app
+ */
+const firebaseApp = initializeApp({
+    credential: applicationDefault()
+});
+
+/**
+ * Get the Auth context fot the initialized app
+ * @type {Auth}
+ */
+const appAuth = getAuth(firebaseApp);
 
 /**
  * Get the JWT token that PowerSync will use to authenticate the user
  */
 router.get("/token", async (req, res) => {
-    const decodedPrivateKey= new Buffer.from(config.powersync.privateKey, 'base64');
-    const powerSyncPrivateKey = JSON.parse(new TextDecoder().decode(decodedPrivateKey));
-    const powerSyncKey = await importJWK(powerSyncPrivateKey);
+    try {
+        // Here, we assume the Authorization header format is: Bearer YOUR_TOKEN
+        const userToken = req.headers.authorization.split(' ')[1];
+        if(!userToken) {
+            res.status(401).send();
+        }
+        // Verify the token with Firebase
+        const decodedToken = await appAuth.verifyIdToken(userToken);
 
-    const token = await new SignJWT({})
-        .setProtectedHeader({
-            alg: powerSyncPrivateKey.alg,
-            kid: powerSyncPrivateKey.kid,
-        })
-        .setSubject("UserID")
-        .setIssuedAt()
-        .setIssuer(config.powersync.jwtIssuer)
-        .setAudience(config.powersync.url)
-        .setExpirationTime('5m')
-        .sign(powerSyncKey);
-    res.send({
-        token: token,
-        powersync_url: config.powersync.url
-    });
+        // If token is valid, decodedToken has all the user info
+        const uid = decodedToken.uid;
+
+        if(decodedToken) {
+            const decodedPrivateKey= new Buffer.from(config.powersync.privateKey, 'base64');
+            const powerSyncPrivateKey = JSON.parse(new TextDecoder().decode(decodedPrivateKey));
+            const powerSyncKey = await importJWK(powerSyncPrivateKey);
+            const token = await new SignJWT({})
+                .setProtectedHeader({
+                    alg: powerSyncPrivateKey.alg,
+                    kid: powerSyncPrivateKey.kid,
+                })
+                .setSubject(uid)
+                .setIssuedAt()
+                .setIssuer(config.powersync.jwtIssuer)
+                .setAudience(config.powersync.url)
+                .setExpirationTime('5m')
+                .sign(powerSyncKey);
+            res.send({
+                token: token,
+                powersync_url: config.powersync.url
+            });
+        }
+    } catch (err) {
+        console.log("[ERROR] Unexpected error", err);
+        res.status(500).send({
+            message: err.message
+        });
+    }
 });
 
 /**
  * This is the JWKS endpoint PowerSync uses to handle authentication
  */
 router.get("/keys", (req, res) => {
-    const decodedPublicKey= new Buffer.from(config.powersync.publicKey, 'base64');
-    const powerSyncPublicKey = JSON.parse(new TextDecoder().decode(decodedPublicKey));
-    res.send({
-        keys: [
-            powerSyncPublicKey
-        ]
-    });
+    try {
+        const decodedPublicKey= new Buffer.from(config.powersync.publicKey, 'base64');
+        const powerSyncPublicKey = JSON.parse(new TextDecoder().decode(decodedPublicKey));
+        res.send({
+            keys: [
+                powerSyncPublicKey
+            ]
+        });
+    } catch (err) {
+        console.log("[ERROR] Unexpected error", err);
+        res.status(500).send({
+            message: err.message
+        });
+    }
 });
 
 export { router as authRouter };
