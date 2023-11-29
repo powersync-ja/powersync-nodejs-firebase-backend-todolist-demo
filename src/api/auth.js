@@ -41,10 +41,12 @@ router.get("/token", async (req, res) => {
         // Verify the token with Firebase
         const decodedToken = await appAuth.verifyIdToken(userToken);
 
-        // If token is valid, decodedToken has all the user info
-        const uid = decodedToken.uid;
+        console.log(decodedToken);
 
         if(decodedToken) {
+            // If token is valid, decodedToken has all the user info
+            const uid = decodedToken.uid;
+
             const decodedPrivateKey= new Buffer.from(config.powersync.privateKey, 'base64');
             const powerSyncPrivateKey = JSON.parse(new TextDecoder().decode(decodedPrivateKey));
             const powerSyncKey = await importJWK(powerSyncPrivateKey);
@@ -67,7 +69,13 @@ router.get("/token", async (req, res) => {
                 userId: uid
             };
 
+            console.log(token);
+
             res.send(responseBody);
+        } else {
+            res.status(401).send({
+                message: "Unable to verify Firebase idToken"
+            });
         }
     } catch (err) {
         console.log("[ERROR] Unexpected error", err);
