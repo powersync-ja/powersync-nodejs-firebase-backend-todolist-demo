@@ -41,8 +41,6 @@ router.get("/token", async (req, res) => {
         // Verify the token with Firebase
         const decodedToken = await appAuth.verifyIdToken(userToken);
 
-        console.log(decodedToken);
-
         if(decodedToken) {
             // If token is valid, decodedToken has all the user info
             const uid = decodedToken.uid;
@@ -68,8 +66,6 @@ router.get("/token", async (req, res) => {
                 expiresAt: null,
                 userId: uid
             };
-
-            console.log(token);
 
             res.send(responseBody);
         } else {

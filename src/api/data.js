@@ -64,9 +64,11 @@ router.delete("/", async (req, res) => {
     const data = req.body.data;
 
     console.log(table, data);
-    /**
-     * TODO: Implement your delete event with the DB here
-     */
+
+    const client = await pool.connect();
+    await client.query(`DELETE FROM ${table} WHERE id = $1`, [data.id]);
+    await client.release();
+
     res.status(200).send({
         message: `PUT completed for ${table} ${data.id}`
     })
@@ -83,22 +85,24 @@ const upsert = async (body, res) => {
         const table = body.table;
         const row = body.data;
 
+        console.log(row);
+
         let text = null;
         let values = [];
 
-        switch(table) {
+        switch (table) {
             case 'lists':
                 text = 'INSERT INTO lists(id, created_at, name, owner_id) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET created_at = EXCLUDED.created_at, name = EXCLUDED.name, owner_id = EXCLUDED.owner_id';
                 values = [row.id, row.created_at, row.name, row.owner_id];
                 break;
             case 'todos':
-                text = 'INSERT INTO todos(id, created_at, completed_at, description, completed, created_by, completed_by, list_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (id) DO UPDATE SET created_at = EXCLUDED.created_at, completed_at = EXCLUDED.completed_at, description = EXCLUDED.description, completed = EXCLUDED.completed, created_by = EXCLUDED.created_by, completed_by = EXCLUDED.completed_by, list_id = EXCLUDED.list_id';
-                values = [row.id, row.created_at, row.completed_at, row.description, row.completed, row.created_by, row.completed_by, row.list_id];
+                text = 'INSERT INTO todos(id, completed_at, description, completed, created_by, completed_by, list_id) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO UPDATE SET completed_at = EXCLUDED.completed_at, completed = EXCLUDED.completed, completed_by = EXCLUDED.completed_by';
+                values = [row.id, row.completed_at, row.description, row.completed, row.created_by, row.completed_by, row.list_id];
                 break;
             default:
                 break;
         }
-        if(text && values.length > 0) {
+        if (text && values.length > 0) {
             const client = await pool.connect();
             await client.query(text, values);
             await client.release();
