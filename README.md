@@ -1,7 +1,7 @@
 # PowerSync Node.js + Firebase Backend: Demo
 
 ## Overview
-This repo contains a demo Node.js server application which has HTTP endpoints to authorize a [PowerSync](https://www.powersync.com/) enabled application to sync data between a client device and a PostgresSQL database. In addition, it has endpoints that allow a PowerSync client authenticate.
+This repo contains a demo Node.js server application which has HTTP endpoints to authorize a [PowerSync](https://www.powersync.com/) enabled application to sync data between a client device and a PostgresSQL database. In addition, it has endpoints that allow a PowerSync client to authenticate.
 
 The endpoints are as follows:
 
