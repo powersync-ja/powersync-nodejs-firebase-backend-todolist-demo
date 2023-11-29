@@ -31,7 +31,6 @@ The repo also has an integration with [Firebase](https://firebase.google.com/doc
 - [node-postgres](https://github.com/brianc/node-postgres)  is used to interact with the Postgres database when a PowerSync enabled client performs requests to the `/api/data` endpoint.
 - [jose](https://github.com/panva/jose) is used to sign the JWT which PowerSync uses for authorization.
 - [firebase-admin](https://github.com/firebase/firebase-admin-node) is used to connect to Firebase and the `verifyIdToken` function is used to validate the client application request before the app generates a JWT used by PowerSync to sync data.
-- [pg](https://github.com/brianc/node-postgres) is used to write data back to the PostgreSQL database when the client processes the CRUD queue.
 
 ## Requirements
 This app needs a PostgresSQL instance that's hosted. For a free version for testing/demo purposes, visit [Supabase](https://supabase.com/).
