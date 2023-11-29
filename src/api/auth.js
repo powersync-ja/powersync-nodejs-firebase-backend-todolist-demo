@@ -28,6 +28,10 @@ const appAuth = getAuth(firebaseApp);
  */
 router.get("/token", async (req, res) => {
     try {
+        if(!req.headers.authorization) {
+            res.status(401).send();
+            return;
+        }
         // Here, we assume the Authorization header format is: Bearer YOUR_TOKEN
         const userToken = req.headers.authorization.split(' ')[1];
         if(!userToken) {
@@ -55,10 +59,15 @@ router.get("/token", async (req, res) => {
                 .setAudience(config.powersync.url)
                 .setExpirationTime('5m')
                 .sign(powerSyncKey);
-            res.send({
+
+            const responseBody = {
                 token: token,
-                powersync_url: config.powersync.url
-            });
+                powerSyncUrl: config.powersync.url,
+                expiresAt: null,
+                userId: uid
+            };
+
+            res.send(responseBody);
         }
     } catch (err) {
         console.log("[ERROR] Unexpected error", err);
