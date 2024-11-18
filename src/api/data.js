@@ -44,7 +44,45 @@ router.patch("/", async (req, res) => {
         });
         return;
     }
-    await upsert(req.body, res);
+    
+    try {
+        const table = req.body.table;
+        const row = req.body.data;
+
+        console.log(row);
+
+        let text = null;
+        let values = [];
+    
+        switch (table) {
+            case 'lists':
+                //No-op
+                break;
+            case 'todos':
+                text = 'UPDATE todos SET completed = $1, completed_at = $2, completed_by = $3 WHERE id = $4 RETURNING *';
+                values = [row.completed, row.completed_at, row.completed_by, row.id];
+                break;
+            default:
+                break;
+        }
+        if (text && values.length > 0) {
+            const client = await pool.connect();
+            await client.query(text, values);
+            await client.release();
+            res.status(200).send({
+                message: `PATCH completed for ${table} ${row.id}`
+            });
+        } else {
+            res.status(400).send({
+                message: "Invalid body provided, expected table and data"
+            });
+        }
+    } catch (ex) {
+        console.log(ex);
+        res.status(500).send({
+            message: ex.message
+        });
+    }
 });
 
 /**
@@ -70,7 +108,7 @@ router.delete("/", async (req, res) => {
     await client.release();
 
     res.status(200).send({
-        message: `PUT completed for ${table} ${data.id}`
+        message: `DELETE completed for ${table} ${data.id}`
     })
 });
 
@@ -89,7 +127,7 @@ const upsert = async (body, res) => {
 
         let text = null;
         let values = [];
-
+    
         switch (table) {
             case 'lists':
                 text = 'INSERT INTO lists(id, created_at, name, owner_id) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET created_at = EXCLUDED.created_at, name = EXCLUDED.name, owner_id = EXCLUDED.owner_id';
